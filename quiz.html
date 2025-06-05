@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Flashcard Quiz App with SweetAlert2 & Timer</title>
+
+    <!-- Roboto font -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: #d6dbd9;
+            /* light gray background */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px;
+            color: black;
+        }
+
+        h1 {
+            color: #2c9610;
+            /* primary green */
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(44, 150, 16, 0.2);
+            /* subtle green shadow */
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+            margin-bottom: 20px;
+            color: black;
+        }
+
+        .question {
+            margin: 20px 0;
+            font-size: 20px;
+            color: #102a62;
+            font-weight: bold;
+        }
+
+        .answer {
+            margin: 20px 0;
+            font-size: 25px;
+            color: #102a62;
+            font-weight: bold;
+            /* dark blue text */
+        }
+
+        .category-intro {
+            margin: 20px 0;
+            font-size: 18px;
+            color: #102a62;
+            font-weight: bold;
+            /* dark blue text */
+        }
+
+        .buttons,
+        .choices {
+            margin-top: 20px;
+        }
+
+        .buttons button,
+        .choices button,
+        #start-screen button,
+        #proceed-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            background-color: #2c9610;
+            /* primary green */
+            color: white;
+            transition: background-color 0.3s ease;
+            user-select: none;
+        }
+
+        .buttons button:hover,
+        .choices button:hover,
+        #start-screen button:hover,
+        #proceed-btn:hover {
+            background-color: #1f6c0b;
+            /* darker green on hover */
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        #timer {
+            font-weight: bold;
+            font-size: 18px;
+            color: #102a62;
+            margin-top: 10px;
+        }
+
+        .card {
+    background: #fff;
+    padding: 2rem;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    max-width: 600px;
+    margin: 4rem auto;
+    text-align: center;
+    font-family: 'Segoe UI', sans-serif;
+    color: #102a62;
+        }
+
+        .highlight {
+            color: #ff6f00;
+        }
+
+        .stats-card {
+            background: #f2f6ff;
+            border-left: 5px solid #102a62;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        .stats-card strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            color: #102a62;
+        }
+
+        .start-button {
+            background: #102a62;
+            color: white;
+            padding: 0.75rem 2rem;
+            font-size: 1.1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .start-button:hover {
+            background: #1c3c8b;
+        }
+
+    </style>
+
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+</head>
+
+<body>
+
+    <h1>DENR QUIZ BEE</h1>
+
+    <!-- Start Screen -->
+    <div class="card" id="start-screen">
+        <h2 style="color:#102a62;">Welcome to QUIZ BEE</h2>
+        <p>Review flashcards by difficulty: Easy → Average → Hard → Tie Breaker</p>
+
+        <div id="question-stats" style="margin-bottom: 1rem; color:#102a62;"></div>
+
+        <button onclick="startQuiz()">Get Ready for the Next Battle</button>
+    </div>
+
+
+    <!-- Quiz Container -->
+    <div class="card hidden" id="quiz-container">
+        <div id="category" class="category-intro"></div>
+        <button class="hidden" id="proceed-btn" onclick="proceedToCategory()">Proceed</button>
+
+        <div class="question" id="question"></div>
+        <div id="timer" class="hidden"></div>
+        <div class="choices" id="choices"></div>
+        <div class="answer hidden" id="answer"></div>
+
+        <div class="buttons hidden" id="controls">
+            <button id="show-answer-btn" onclick="showAnswer()">Show Answer</button>
+            <button id="next-btn" onclick="nextQuestion()">Next</button>
+        </div>
+    </div>
+
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+            window.addEventListener("beforeunload", function (e) {
+            e.preventDefault(); // Most browsers require this for the dialog to appear
+            e.returnValue = ""; // Required for modern browsers
+            });
+        const questionsByCategory = {
+            easy: [
+                //Paper 1
+                //Q1
+                {
+                    question: "1.What government agency is primarily responsible for implementing public land laws in Philippines",
+                    choices: ["DENR", "DA", "DPWH", "DILG"],
+                    answer: "A. DENR"
+                },
+                //Q2
+                {
+                    question: "2.What Republic Act governs the issuance of Residential Free Patents in the Philippines?",
+                    choices: ["RA 7279", "RA 10023", "RA 9700", "RA 7586"],
+                    answer: "B. RA 10023"
+                },
+                //Q3
+                {
+                    question: "3.True or False : A non-filipino citizen is eligble to apply for an Agricultural Free Patent over alienable and disposable lands",
+                    answer: "False"
+                },
+                //Q4
+                {
+                    question: "4.What type of patent is granted to Filipino citizens who have occupied and cultivated land for agricultural purposes",
+                    choices: ["Residential Free Patent", "Homestead Patent", "Lease Agreement", "Special Patent"],
+                    answer: "B. Homestead Patent"
+                },
+                //Q5
+                {
+                    question: "5.Which of the following best describes foreshore land? ",
+                    choices: ["Land used for commercial buildings", "Land submerged permanently underwater", "Strip of land between high tide and low tide", "Mountainous agricultural land"],
+                    answer: "C. Strip of land between high tide and low tide"
+                },
+                //Paper 2
+                //Q1
+                {
+                    question: "6.____________ are the common reproductive material trees",
+                    choices: ["flower", "genetic material", "seeds", "cells"],
+                    answer: "C. seeds"
+                },
+                //Q2
+                {
+                    question: "7.it is the manual for DENR Admin Order No. 2016-29, pursuant to Executive Order No. 02 signed on 23 July 2016 entitled 'Operationalizing Policies of Full Public Disclosure and Transparency in the Public Service and Providing Guideline Therefor', and ensures that every Filipino has access to information... ",
+                    choices: ["PHILIPPINE ENVIRONMENT POLICY", "FREEDOM OF INFORMATION", "ENVIRONMENT IMPACT STATEMENT", "WRIT OF KALIKASAN"],
+                    answer: "B. FREEDOM OF INFORMATION"
+                },
+                //Q3
+                {
+                    question: "8.The law which aims to protect the country's water bodies from pollution from land-based sources (industries and commercial establishments agriculture and community/household activities).It provides for comprehensive and integrated strategy to prevent and minimize pollution through a multi-sectoral and participatory approach involving all the stakeholders.",
+                    choices: ["CLEAN AIR ACT OF 1999", "TOXIC SUBSTANCES, HAZARDOUS AND NUCLEAR WASTE CONTROL ACT OF 1990", "ECOLOGICAL SOLID WASTE MANAGEMENT ACT OF 2020", "CLEAN WATER ACT IF 2004"],
+                    answer: "D. CLEAN WATER ACT IF 2004"
+                },
+                //Q4
+                {
+                    question: "9.An Act that integrates climate change adaptation and mitigation strategies into policy formulation and development activities of all government",
+                    choices: ["Climate Change of 2009", "Climate Change of 2010", "Climate Change of 2011", "Climate Change of 2012"],
+                    answer: "A. Climate Change of 2009"
+                },
+                //Q5
+                {
+                    question: "10.It is a small, sessile marine animal that have a symbiotic relationship with algae (zooxanthellae) that live in their tissues which secrete a calcium carbonate skeleton, contributing to the formation of reefs.",
+                    choices: ["marine invertebrates", "corals", "phytoplankton", "algae"],
+                    answer: "B. corals"
+                },
+                // Paper 3
+                //Q1
+                {
+                    question: "11.True or False : After the conduct of timber inventory within the Mineral Production Sharing Agreement (MPSA) of the mining company and the 		accomplishment of the required documentations and reports, the proponent will pay the corresponding prevailing market price of all the timber invetoried 		before the cutting operations.",
+                    answer: "False (prevailing market price to forest charges)",
+                },
+                //Q2
+                {
+                    question: "12.How many sections comprise Presential Decree No. 705, as amended by EO.277 and RA 7161 ?",
+                    choices: ["90", "91", "92", "93", "94"],
+                    answer: "C. 92",
+                },
+                //Q3
+                {
+                    question: "13.What particular DENR Administrative Order entitled 'Revised Guidelines on the Deputation of Environment and Natural Resources Officers (DENRO)'?",
+                    choices: ["DAO 1998-22", "DAO 2018-22", "DAO 2000-22", "DAO 2002-22", "DAO 2008-22"],
+                    answer: "E. DAO 2008-22",
+                },
+                //Q4
+                {
+                    question: "14.True or False : After the conduct of timber inventory within the applied area of the Forest Land Usage Agreement (FLAg) of the private individual and the accomplishment of the required documentations and reports, the proponent will pay the corresponding total amount prescribed in the Freight on Board(FOB), pursuant to DAO 2000-63 of all the timber inventoried before the start of the cutting operations.",
+                    
+                    answer: "True (Total amount or Forest Charges)",
+                },
+                {
+                    question: "15.What is the particular DENR Administrative Order entitled 'Rules and Regulations Governing the Socialized Industrial Forest Management Program? '",
+                    choices: ["DAO 1997-22", "DAO 1995-22", "DAO 2000-63", "DAO 1996-24", "DAO 1996-34"],
+                    answer: "D. DAO 1996-24"
+                }
+
+
+
+
+
+            ],
+            average: [
+                {
+                    question: "1.True or False : RA 10023 allows the issuance of Residential Free Patents only for lands that are both classified as alienable and disposable and zoned as residential by local government unit.",
+                    answer: "True \n (Both conditions must be satisfied for a valid application)"
+                },
+                {
+                    question: "2.True or False : A Filipino citizen may apply for an Agricultural Free Patent for two or more separate parcels of land, provided the total combined area does not exceed the maximum limit prescribed by law",
+                    answer: "True \n (CA 141 allows ownership of more than one parcel as long as the total area does not exceed the maximum area allowed for agricultural free patent, which is generally 12 hectares)"
+                },
+                {
+                    question: "3.True or False : Under the Public Land Act the maximum area of agricultural land that a qualified Filipino citizen may acquire through a Homestead Patent is 12 hectares",
+                    answer: "False \n  (Area limit for Homestead is 5 hectares)"
+                },
+
+                {
+                    question: "4.Acquiring this certificate from the DENR means that your proposed undertaking poses no significant negative impact on the environment.",
+                    choices: ["Certificate of Non-Coverage (CNC)", "Environmental Compliance Certificate (ECC)", "Certificate of Conformity (CoC)", "Importation Clearance"],
+                    answer: "B. Environmental Compliance Certificate (ECC) "
+                },
+
+                {
+                    question: "5.4 Biggest Environmental Issues in the Philippines in 2024 (Earth.org)",
+                    answer: "\n-Air Pollution \n-Plastic Pollution\n-Marine Pollution\n-Sea Level Rise"
+                },
+
+                {
+                    question: "6.DENR Bureaus",
+                    answer: "\n-Biodiversity Management\n-Ecosystems Research and Development\n-Environmental Management\n-Forestry Management\n-Land Management-\n-Mines & Geo-Sciences"
+                },
+
+                // Paper 3
+                {
+                    question: "7. Give atleast three (3) elements under Miranda Rights or Doctrine\nThe Miranda Rights, also known as the Miranda Warning, are legal protections given to individuals in police custody to safeguard against self-incrimination. The Key elements include: ",
+                    answer: "1.Right To Remain Silent - You have the right to reamin silent, and anything you say can be used against you in a court of law.\n2. Right to an Attorney - You have the right to consult an attorney, and if you cannot afford one,a lawyer will be provided for you\n3.Protection Against Self-Incrimination - You are not obligated to answer questions that could incriminate you.\n4.Understanding the Rights - These rights must be communicated clearly,ensuring fully understanding them\n5. Voluntary Waiver - if you choose to speak or waive your rights,it must be done knowingly,voluntarily,and without coercion.\n\n or Either \n Shortcut in continuous saying: \n1.You have the right to remain silent\n2.Anything you say will be used in favor or against you\n3.You have your own counsel at your own price\n4.If you don't have, the government will provide it to you.\n5.Do you Understand?"
+                }
+
+            ],
+            hard: [
+
+                //Paper 1
+                {
+                    question: "1.Commonwealth Act No. 141, also know as the Public Land Act, was enacted during the administration of President__________",
+                    answer: "Manuel L. Quezon"
+                },
+                {
+                    question: "2.Commonwealth Act No. 141, which governs the classification and disposition of public lands in the philippines, was enacted on ______________.",
+                    answer: "November 7, 1936"
+                },
+
+                // Paper2 
+                {
+                    question: "3.What Marine Protected Area under NIPAS component in Palawan has the smallest area coverage/jurisdication",
+                    choices: ["MSPLS (200,115 ha)", "UIGRBS (17.2) ha", "TRNP (227,058) ha", "RIWS (1,983) ha"],
+                    answer: "B. UIGRBS (17.2) ha ",
+                },
+                {
+                    question: "4.What is the scientific name of The Philippine Eagle?",
+                    choices: ["Haliaeetus pelagicus - Steller's sea Eagle", "Haliaeetus albicilla - White-tailed eagle", "Aqua chrysaetos - Golden eagle", "Pithecophaga jefferyi - The Philippine Eagle"],
+                    answer: "D. Pithecophaga jefferyi - The Philippine Eagle",
+                },
+                // Paper 3
+                {
+                    question: "5.Section 84 of President Decree No. 705 ,as amended, provides an imposition of pentalties if found guilty upon any public officer or employee who shall isue a tax declaration on real property without certification from the Director of Forest Development and the Director of Lands or their duly designated representatives, select the correct answer,to the following choices: ",
+                    choices: [
+                        "An imprisonment for a period of not less than one (1) nor more than two(2) years and six(6) years of disqualification from holding an elective or appointive office",
+                        "An imprisontment for a period of not less than two(2) nor more than four(4) years and  perpetual disqualification from holding an elective or appointive office",
+                        "An imprisontment for a period of not less than four(4) nor more than six(6) years and perpetual disqualification from holding an elective or appointive office",
+                        "An imprisonment for a period of not less than four(4) nor more than six(6) years and eight(8) years of disqualification from holding an elective or appointive office",
+                    ],
+                    answer: "B. An imprisontment for a period of not less than two(2) nor more than four(4) years and  perpetual disqualification from holding an elective or appointive office",
+                },
+
+                {
+                    question: "6.Pursuant to Section 77 of PD 705, as amended any person responsbile for the _____________,_____________,___________, give three(3) main elements/actions of violation without any authority or without the legal documents  as required under existing forest laws and regulations, is held liable and shall be punished with the penalties imposed under Articles 309 and 310 of the Revised Penal Code",
+                    answer: "In Any Order: \n Cutting, Gathering, Collecting,Removing,Transporting or Possession",
+                },
+
+
+
+            ],
+            tieBreaker: [
+                {
+                    question: "1.A Filipino farmer has been cultivating a 10-hectare parcel of public agricultural land since 1994.\nThe Land has been declared alienable and disposable since 1990. He Applied for an Agricultural Free Patent but upon verification,it is discovered that the same land is also being claimed by another individual under a HomeStead Patent application. Which of the following actions is most appropriate under the Public Land Act?",
+                    choices: ["Grant the Homestead Patent since it gives higher priority over agricultural free patents", "Conduct a land investigation and resolve the conflict based on existing laws", "Immediately deny both applications due to conflicting claims", "Recommend the conflict to the higher court"],
+                    answer: "B. Conduct a land investigation and resolve the conflict based on existing laws"
+                },
+                {
+                    question: "2.Give at least 5 DENR DEVELOPMENT PRINCIPLE",
+                    answer: "\n*Good Governance\n*Accountability,transparency,integrity,participatory and predictability\n*Ease of doing business\n*Social Justice\n*Equity and gross national happiness\n*Social Entrepreneurship\n*Partnership with Civil Society\n*Ecosystem integrity\n*Sustainable consumption and production\n*Polluters pay\n*Payment for ecosystem services\n*Rule of Law\n*Honoring global commitments"
+                },
+                {
+                    question: "3.After the issuance of three (3) Notices of Violation, the DENR personnel shal do the following except one",
+                    choices: ["File appropriate cases in the proper court", "File appropriate cases to the office of Solicitor General of the Philippines", "Conduct administrative proceedings", "Refer the case to the local government units,pursuan to R.A 7160","Refer the case to CENRO/PENRO/Regional Office, for appropriate action"],
+                    answer: "B. File appropriate cases to the office of Solicitor General of the Philippines"
+                },
+            ]
+        };
+
+        const categories = ["easy", "average", "hard", "tieBreaker"];
+        const categoryDisplayNames = {
+            easy: "EASY",
+            average: "AVERAGE",
+            hard: "HARD",
+            tieBreaker: "TIE BREAKER"
+        };
+
+        // Timer seconds per category
+        const timers = {
+            easy: 15,
+            average: 20,
+            hard: 30,
+            tieBreaker: 20
+        };
+
+        let currentCategoryIndex = 0;
+        let currentQuestionIndex = -1;
+        let currentQuestions = [];
+        let timerInterval = null;
+        let timeLeft = 0;
+
+        // DOM Elements for easy access
+        const startScreen = document.getElementById("start-screen");
+        const quizContainer = document.getElementById("quiz-container");
+        const categoryDiv = document.getElementById("category");
+        const proceedBtn = document.getElementById("proceed-btn");
+        const questionDiv = document.getElementById("question");
+        const choicesDiv = document.getElementById("choices");
+        const answerDiv = document.getElementById("answer");
+        const controlsDiv = document.getElementById("controls");
+        const showAnswerBtn = document.getElementById("show-answer-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const timerDiv = document.getElementById("timer");
+
+        function startQuiz() {
+            startScreen.classList.add("hidden");
+            quizContainer.classList.remove("hidden");
+            currentCategoryIndex = 0;
+            showCategoryIntro();
+        }
+
+        function showCategoryIntro() {
+            const category = categories[currentCategoryIndex];
+            categoryDiv.innerText = `📘 Starting ${categoryDisplayNames[category]} Questions`;
+            questionDiv.innerText = "";
+            answerDiv.innerText = "";
+            answerDiv.classList.add("hidden");
+            choicesDiv.innerHTML = "";
+            controlsDiv.classList.add("hidden");
+            proceedBtn.classList.remove("hidden");
+            timerDiv.classList.add("hidden");
+            currentQuestionIndex = -1;
+            clearTimer();
+        }
+
+        function proceedToCategory() {
+            const category = categories[currentCategoryIndex];
+            currentQuestions = shuffle([...questionsByCategory[category]]);
+            currentQuestionIndex = 0;
+            proceedBtn.classList.add("hidden");
+            controlsDiv.classList.remove("hidden");
+            showQuestion();
+        }
+
+        function showQuestion() {
+            clearTimer();
+
+            const category = categories[currentCategoryIndex];
+            const q = currentQuestions[currentQuestionIndex];
+
+            categoryDiv.innerText = `Category: ${categoryDisplayNames[category]}`;
+            questionDiv.innerText = q.question;
+            answerDiv.innerText = `Answer: ${q.answer}`;
+            answerDiv.classList.add("hidden");
+            choicesDiv.innerHTML = "";
+
+
+            nextBtn.classList.add("hidden");
+            timerDiv.classList.remove("hidden");
+
+            showAnswerBtn.classList.remove("hidden");
+
+            if (q.choices) {
+                q.choices.forEach((choice, index) => {
+                    const letter = String.fromCharCode(65 + index);
+                    const btn = document.createElement("button");
+                    btn.innerText = `${letter}. ${choice}`;
+
+                    btn.disabled = true;
+                    choicesDiv.appendChild(btn);
+                });
+            }
+
+            startTimer(timers[category]);
+        }
+
+        function showAnswer() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "Do you want to reveal the answer?",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, show it!',
+                cancelButtonText: 'No, keep it hidden'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    answerDiv.classList.remove("hidden");
+                    nextBtn.classList.remove("hidden");
+                    showAnswerBtn.classList.add("hidden");
+                    clearTimer();
+                }
+            });
+        }
+
+        function nextQuestion() {
+            clearTimer();
+            currentQuestionIndex++;
+            if (currentQuestionIndex >= currentQuestions.length) {
+                currentCategoryIndex++;
+                if (currentCategoryIndex >= categories.length) {
+                    endQuiz();
+                } else {
+                    showCategoryIntro();
+                }
+            } else {
+                showQuestion();
+            }
+        }
+
+        function endQuiz() {
+            categoryDiv.innerText = "🎉 Congratulations! You have completed the Quiz Bee!";
+            questionDiv.innerText = "";
+            choicesDiv.innerHTML = "";
+            answerDiv.innerText = "";
+            answerDiv.classList.add("hidden");
+            proceedBtn.classList.add("hidden");
+            controlsDiv.classList.add("hidden");
+            timerDiv.classList.add("hidden");
+            Swal.fire({
+                title: 'Quiz Completed!',
+                text: 'Thank you for participating in the PENRO Quiz Bee.',
+                icon: 'success',
+                confirmButtonText: 'Restart'
+            }).then(() => {
+                startScreen.classList.remove("hidden");
+                quizContainer.classList.add("hidden");
+            });
+        }
+
+        function startTimer(seconds) {
+            clearTimer();
+            timeLeft = seconds;
+            timerDiv.innerText = `⏳ Time Left: ${timeLeft}s`;
+            timerDiv.classList.remove("hidden");
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerDiv.innerText = `⏳ Time Left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearTimer();
+                    Swal.fire({
+                        title: 'Time\'s up!',
+                        text: 'The time for this question has ended.',
+                        icon: 'info',
+                        confirmButtonText: 'Show Answer'
+                    }).then(() => {
+                        if (showAnswerBtn.classList.contains("hidden") === false) {
+                            showAnswer();
+                        }
+                    });
+                }
+            }, 1000);
+        }
+
+        function clearTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+        // Randomizer
+        function shuffle(array) {
+            let currentIndex = array.length,
+                temporaryValue, randomIndex;
+            while (0 !== currentIndex) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+            return array;
+        }
+
+
+        window.onload = function () {
+        const statsContainer = document.getElementById('question-stats');
+
+        const categoryCounts = Object.entries(questionsByCategory).map(([category, questions]) => {
+            const capitalized = category.charAt(0).toUpperCase() + category.slice(1);
+            return `${capitalized}: ${questions.length}`;
+        });
+
+        const total = Object.values(questionsByCategory).reduce((sum, arr) => sum + arr.length, 0);
+
+        statsContainer.innerHTML = `
+            <strong>Total Questions:</strong> ${total}<br>
+            <strong>By Category:</strong><br>
+            ${categoryCounts.join('<br>')}
+        `;
+    };
+
+
+
+
+    </script>
+</body>
+
+</html>
